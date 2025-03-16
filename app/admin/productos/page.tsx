@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import type { Producto } from "@/types/producto"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -19,11 +20,15 @@ import { useToast } from "@/hooks/use-toast"
 import { PlusIcon, Pencil, Trash2 } from "lucide-react"
 import { getAllProductos, createProducto, updateProducto, deleteProducto } from "@/services/productos.service"
 
+type ProductoForm = Omit<Producto, 'stock' | 'categoria' | 'imagen_url' | 'created_at'> & {
+  id: number;
+};
+
 export default function ProductosPage() {
   const { toast } = useToast()
-  const [productos, setProductos] = useState([])
+  const [productos, setProductos] = useState<Producto[]>([])
   const [loading, setLoading] = useState(true)
-  const [productoActual, setProductoActual] = useState({
+  const [productoActual, setProductoActual] = useState<ProductoForm>({
     id: 0,
     nombre: "",
     descripcion: "",
@@ -57,7 +62,7 @@ export default function ProductosPage() {
     fetchProductos()
   }, [toast])
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setProductoActual({
       ...productoActual,
@@ -79,13 +84,13 @@ export default function ProductosPage() {
     setDialogOpen(true)
   }
 
-  const handleEditarProducto = (producto) => {
+  const handleEditarProducto = (producto: ProductoForm) => {
     setModo("editar")
     setProductoActual(producto)
     setDialogOpen(true)
   }
 
-  const handleEliminarProducto = async (id) => {
+  const handleEliminarProducto = async (id: number) => {
     if (confirm("¿Estás seguro de que deseas eliminar este producto?")) {
       try {
         setActionLoading(true)
@@ -142,7 +147,7 @@ export default function ProductosPage() {
       console.error("Error al guardar producto:", error)
       toast({
         title: "Error",
-        description: error.message || "No se pudo guardar el producto",
+        description: (error instanceof Error ? error.message : "No se pudo guardar el producto"),
         variant: "destructive",
       })
     } finally {
@@ -150,7 +155,7 @@ export default function ProductosPage() {
     }
   }
 
-  const calcularPrecioConIVA = (precio, iva) => {
+  const calcularPrecioConIVA = (precio: number, iva: number): number => {
     return precio * (1 + iva / 100)
   }
 
@@ -191,36 +196,44 @@ export default function ProductosPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {productos.map((producto) => (
-                  <TableRow key={producto.id}>
-                    <TableCell className="font-medium">{producto.id}</TableCell>
-                    <TableCell>{producto.nombre}</TableCell>
-                    <TableCell>${Number.parseFloat(producto.precio).toLocaleString()}</TableCell>
-                    <TableCell>{producto.iva}%</TableCell>
-                    <TableCell>${calcularPrecioConIVA(producto.precio, producto.iva).toLocaleString()}</TableCell>
-                    <TableCell>{producto.tiempo_preparacion} min</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditarProducto(producto)}
-                          disabled={actionLoading}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEliminarProducto(producto.id)}
-                          disabled={actionLoading}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {productos.map((producto) => {
+                  if (!producto.id) return null;
+                  const productoWithId: ProductoForm = {
+                    ...producto,
+                    id: producto.id
+                  };
+
+                  return (
+                    <TableRow key={producto.id}>
+                      <TableCell className="font-medium">{producto.id}</TableCell>
+                      <TableCell>{producto.nombre}</TableCell>
+                      <TableCell>${Number.parseFloat(producto.precio.toString()).toLocaleString()}</TableCell>
+                      <TableCell>{producto.iva}%</TableCell>
+                      <TableCell>${calcularPrecioConIVA(producto.precio, producto.iva).toLocaleString()}</TableCell>
+                      <TableCell>{producto.tiempo_preparacion} min</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditarProducto(productoWithId)}
+                            disabled={actionLoading}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEliminarProducto(productoWithId.id)}
+                            disabled={actionLoading}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}

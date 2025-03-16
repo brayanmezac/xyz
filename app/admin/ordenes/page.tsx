@@ -17,13 +17,14 @@ import {
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { getAllOrdenes, updateOrdenEstado } from "@/services/ordenes.service"
+import { Orden } from "@/types/orden"
 
 export default function OrdenesPage() {
   const { toast } = useToast()
-  const [ordenes, setOrdenes] = useState([])
+  const [ordenes, setOrdenes] = useState<Orden[]>([])
   const [loading, setLoading] = useState(true)
   const [filtroEstado, setFiltroEstado] = useState("todos")
-  const [ordenSeleccionada, setOrdenSeleccionada] = useState(null)
+  const [ordenSeleccionada, setOrdenSeleccionada] = useState<Orden | null>(null)
   const [dialogDetalleOpen, setDialogDetalleOpen] = useState(false)
   const [dialogEstadoOpen, setDialogEstadoOpen] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
@@ -41,7 +42,7 @@ export default function OrdenesPage() {
     "Rechazado",
   ]
 
-  const coloresEstado = {
+  const coloresEstado: { [key: string]: string } = {
     "Nuevo pedido": "bg-blue-100 text-blue-800",
     "En preparación": "bg-yellow-100 text-yellow-800",
     "Listo para servir": "bg-green-100 text-green-800",
@@ -75,17 +76,17 @@ export default function OrdenesPage() {
     fetchOrdenes()
   }, [toast])
 
-  const handleVerDetalle = (orden) => {
+  const handleVerDetalle = (orden: Orden) => {
     setOrdenSeleccionada(orden)
     setDialogDetalleOpen(true)
   }
 
-  const handleCambiarEstado = (orden) => {
+  const handleCambiarEstado = (orden: Orden) => {
     setOrdenSeleccionada(orden)
     setDialogEstadoOpen(true)
   }
 
-  const handleActualizarEstado = async (nuevoEstado) => {
+  const handleActualizarEstado = async (nuevoEstado: string) => {
     if (!ordenSeleccionada) return
 
     try {
@@ -117,7 +118,7 @@ export default function OrdenesPage() {
     }
   }
 
-  const handleImprimirFactura = (orden) => {
+  const handleImprimirFactura = (orden: Orden) => {
     // En una implementación real, aquí se generaría la factura en PDF
     console.log("Imprimir factura para la orden:", orden)
 
@@ -189,7 +190,7 @@ export default function OrdenesPage() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Total:</span>
-                      <span className="font-bold">${Number.parseFloat(orden.total).toLocaleString()}</span>
+                      <span className="font-bold">${Number.parseFloat(orden.total.toString()).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" size="sm" onClick={() => handleVerDetalle(orden)}>
@@ -269,7 +270,7 @@ export default function OrdenesPage() {
                       <TableRow key={index}>
                         <TableCell>{producto.nombre}</TableCell>
                         <TableCell className="text-right">
-                          ${Number.parseFloat(producto.precio).toLocaleString()}
+                          ${Number.parseFloat(producto.precio.toString()).toLocaleString()}
                         </TableCell>
                         <TableCell className="text-center">{producto.cantidad}</TableCell>
                         <TableCell className="text-right">
@@ -285,19 +286,19 @@ export default function OrdenesPage() {
                 <div className="rounded-lg border p-3 space-y-1">
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
-                    <span>${Number.parseFloat(ordenSeleccionada.subtotal).toLocaleString()}</span>
+                    <span>${Number.parseFloat(ordenSeleccionada.subtotal.toString()).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>IVA (19%):</span>
-                    <span>${Number.parseFloat(ordenSeleccionada.iva).toLocaleString()}</span>
+                    <span>${Number.parseFloat(ordenSeleccionada.iva.toString()).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Impuesto al consumo (8%):</span>
-                    <span>${Number.parseFloat(ordenSeleccionada.impuesto_consumo).toLocaleString()}</span>
+                    <span>${Number.parseFloat(ordenSeleccionada.impuesto_consumo.toString()).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between font-bold">
                     <span>Total:</span>
-                    <span>${Number.parseFloat(ordenSeleccionada.total).toLocaleString()}</span>
+                    <span>${Number.parseFloat(ordenSeleccionada.total.toString()).toLocaleString()}</span>
                   </div>
                 </div>
               </div>

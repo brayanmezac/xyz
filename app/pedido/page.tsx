@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, ChangeEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -13,14 +13,34 @@ import { MinusIcon, PlusIcon, Trash2Icon } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createOrden } from "@/services/ordenes.service"
+import { OrdenData as OrdenDataType, ProductoOrden } from "@/types/orden"
+
+interface DatosClienteForm {
+  nombre: string;
+  tipoIdentificacion: "CC" | "CE" | "TI" | "PP";
+  numeroIdentificacion: string;
+  telefono: string;
+  mesa: string;
+}
+
+interface Producto extends Omit<ProductoOrden, 'id'> {
+  id: string | number;
+}
+
+interface CarritoHook {
+  productos: Producto[];
+  actualizarCantidad: (id: string | number, cantidad: number) => void;
+  eliminarProducto: (id: string | number) => void;
+  vaciarCarrito: () => void;
+}
 
 export default function PedidoPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const { productos, actualizarCantidad, eliminarProducto, vaciarCarrito } = useCarrito()
+  const { productos, actualizarCantidad, eliminarProducto, vaciarCarrito } = useCarrito() as CarritoHook
   const [paso, setPaso] = useState(1)
   const [loading, setLoading] = useState(false)
-  const [datosCliente, setDatosCliente] = useState({
+  const [datosCliente, setDatosCliente] = useState<DatosClienteForm>({
     nombre: "",
     tipoIdentificacion: "CC",
     numeroIdentificacion: "",
@@ -28,7 +48,7 @@ export default function PedidoPage() {
     mesa: "",
   })
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setDatosCliente((prev) => ({
       ...prev,
@@ -36,19 +56,21 @@ export default function PedidoPage() {
     }))
   }
 
-  const handleSelectChange = (name, value) => {
+  const handleSelectChange = (name: keyof DatosClienteForm, value: string) => {
     setDatosCliente((prev) => ({
       ...prev,
       [name]: value,
     }))
   }
 
-  const calcularSubtotal = () => {
-    return productos.reduce((total, producto) => total + producto.precio * producto.cantidad, 0)
+  const calcularSubtotal = (): number => {
+    return productos.reduce((total: number, producto: Producto) => 
+      total + producto.precio * producto.cantidad, 0)
   }
 
-  const calcularIVA = () => {
-    return productos.reduce((total, producto) => total + producto.precio * (producto.iva / 100) * producto.cantidad, 0)
+  const calcularIVA = (): number => {
+    return productos.reduce((total: number, producto: Producto) => 
+      total + producto.precio * ((producto.iva ?? 0) / 100) * producto.cantidad, 0)
   }
 
   const calcularImpuestoConsumo = () => {
@@ -83,14 +105,22 @@ export default function PedidoPage() {
     }
 
     // Generar orden
-    const orden = {
-      cliente: datosCliente,
-      productos,
+    const orden: OrdenDataType = {
+      cliente: {
+        nombre: datosCliente.nombre,
+        tipoIdentificacion: datosCliente.tipoIdentificacion,
+        numeroIdentificacion: datosCliente.numeroIdentificacion,
+        telefono: datosCliente.telefono
+      },
+      productos: productos.map(p => ({
+        ...p,
+        id: typeof p.id === 'string' ? parseInt(p.id, 10) : p.id
+      })),
       subtotal: calcularSubtotal(),
       iva: calcularIVA(),
       impuestoConsumo: calcularImpuestoConsumo(),
       total: calcularTotal(),
-      mesa: datosCliente.mesa,
+      mesa: parseInt(datosCliente.mesa, 10) // Convert to number
     }
 
     setLoading(true)
@@ -154,7 +184,7 @@ export default function PedidoPage() {
                     <TableRow key={producto.id}>
                       <TableCell className="font-medium">{producto.nombre}</TableCell>
                       <TableCell className="text-right">
-                        ${Number.parseFloat(producto.precio).toLocaleString()}
+                        ${(producto.precio as number).toLocaleString()}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center space-x-2">
@@ -162,7 +192,7 @@ export default function PedidoPage() {
                             variant="outline"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => actualizarCantidad(producto.id, Math.max(1, producto.cantidad - 1))}
+                            onClick={() => actualizarCantidad(String(producto.id), Math.max(1, producto.cantidad - 1))}
                           >
                             <MinusIcon className="h-4 w-4" />
                           </Button>
@@ -171,7 +201,7 @@ export default function PedidoPage() {
                             variant="outline"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => actualizarCantidad(producto.id, producto.cantidad + 1)}
+                            onClick={() => actualizarCantidad(String(producto.id), producto.cantidad + 1)}
                           >
                             <PlusIcon className="h-4 w-4" />
                           </Button>
@@ -185,7 +215,7 @@ export default function PedidoPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => eliminarProducto(producto.id)}
+                          onClick={() => eliminarProducto(String(producto.id))}
                         >
                           <Trash2Icon className="h-4 w-4" />
                         </Button>

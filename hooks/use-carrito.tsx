@@ -1,14 +1,25 @@
 "use client"
 
 import { createContext, useContext, useState } from "react"
+import { ReactNode } from "react"
+import { Producto, ProductoCarrito } from "../types/producto"
 
-const CarritoContext = createContext(undefined)
+interface CarritoContextType {
+  productos: ProductoCarrito[];
+  agregarProducto: (producto: Producto) => void;
+  actualizarCantidad: (id: number, cantidad: number) => void;
+  eliminarProducto: (id: number) => void;
+  vaciarCarrito: () => void;
+  totalProductos: number;
+}
 
-export function CarritoProvider({ children }) {
-  const [productos, setProductos] = useState([])
+const CarritoContext = createContext<CarritoContextType | undefined>(undefined)
 
-  const agregarProducto = (producto) => {
-    setProductos((prevProductos) => {
+export function CarritoProvider({ children }: { children: ReactNode }) {
+  const [productos, setProductos] = useState<ProductoCarrito[]>([])
+
+  const agregarProducto = (producto: Producto) => {
+    setProductos((prevProductos: ProductoCarrito[]) => {
       // Verificar si el producto ya está en el carrito
       const productoExistente = prevProductos.find((p) => p.id === producto.id)
 
@@ -22,12 +33,12 @@ export function CarritoProvider({ children }) {
     })
   }
 
-  const actualizarCantidad = (id, cantidad) => {
-    setProductos((prevProductos) => prevProductos.map((p) => (p.id === id ? { ...p, cantidad } : p)))
+  const actualizarCantidad = (id: number, cantidad: number) => {
+    setProductos((prevProductos: ProductoCarrito[]) => prevProductos.map((p: ProductoCarrito) => (p.id === id ? { ...p, cantidad } : p)))
   }
 
-  const eliminarProducto = (id) => {
-    setProductos((prevProductos) => prevProductos.filter((p) => p.id !== id))
+  const eliminarProducto = (id: number) => {
+    setProductos((prevProductos: ProductoCarrito[]) => prevProductos.filter((p: ProductoCarrito) => p.id !== id))
   }
 
   const vaciarCarrito = () => {

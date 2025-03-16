@@ -1,9 +1,9 @@
 "use server"
 
 import { getSupabaseServer } from "@/lib/supabase/server"
-import { OrdenData, ProductoOrden } from "../types/orden"
+import { Orden, OrdenData, ProductoOrden } from "@/types/orden"
 
-export async function getAllOrdenes() {
+export async function getAllOrdenes(): Promise<Orden[]> {
   const supabase = await getSupabaseServer()
 
   const { data: ordenes, error: ordenesError } = await supabase
@@ -52,7 +52,7 @@ export async function getAllOrdenes() {
   return ordenesCompletas
 }
 
-export async function getOrdenById(id: number) {
+export async function getOrdenById(id: number): Promise<Orden | null> {
   const supabase = await getSupabaseServer()
 
   const { data: orden, error: ordenError } = await supabase
@@ -94,7 +94,7 @@ export async function getOrdenById(id: number) {
   return { ...orden, productos }
 }
 
-export async function createOrden(ordenData: OrdenData) {
+export async function createOrden(ordenData: OrdenData): Promise<Orden> {
   const supabase = await getSupabaseServer()
 
   // Primero creamos o actualizamos el cliente
@@ -197,7 +197,7 @@ export async function createOrden(ordenData: OrdenData) {
     producto_id: p.id,
     cantidad: p.cantidad,
     precio_unitario: p.precio,
-    iva_unitario: p.precio * (p.iva / 100),
+    iva_unitario: p.precio * ((p.iva ?? 0) / 100),
     subtotal: p.precio * p.cantidad,
   }))
 
@@ -211,7 +211,7 @@ export async function createOrden(ordenData: OrdenData) {
   return nuevaOrden[0]
 }
 
-export async function updateOrdenEstado(id: number, estado: string) {
+export async function updateOrdenEstado(id: string, estado: string): Promise<Orden> {
   const supabase = await getSupabaseServer()
 
   const { data, error } = await supabase
@@ -241,7 +241,7 @@ export async function updateOrdenEstado(id: number, estado: string) {
 }
 
 // Función auxiliar para actualizar el estado de la mesa
-async function updateMesaEstado(id: number, estado: string) {
+async function updateMesaEstado(id: number, estado: string): Promise<boolean> {
   const supabase = await getSupabaseServer()
 
   const { error } = await supabase.from("mesas").update({ estado, updated_at: new Date().toISOString() }).eq("id", id)

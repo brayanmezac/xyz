@@ -20,10 +20,15 @@ import { getAllMesas, createMesa, updateMesaEstado, deleteMesa } from "@/service
 
 interface Mesa {
   id: number
-  numero: string
+  numero: number  // Changed from string to number
   capacidad: number
   estado: EstadoMesa
 }
+
+// Remove MesaResponse interface since it's now the same as Mesa
+
+// Add type for create mesa payload
+type CreateMesaPayload = Omit<Mesa, 'id'>
 
 type EstadoMesa = 'Libre' | 'Ocupada' | 'Reservada' | 'Mantenimiento'
 
@@ -35,9 +40,8 @@ export default function MesasPage() {
   const { toast } = useToast()
   const [mesas, setMesas] = useState<Mesa[]>([])
   const [loading, setLoading] = useState<boolean>(true)
-  const [mesaActual, setMesaActual] = useState<Mesa>({
-    id: 0,
-    numero: "",
+  const [mesaActual, setMesaActual] = useState<CreateMesaPayload>({
+    numero: 0,  // Changed from empty string to 0
     capacidad: 4,
     estado: "Libre",
   })
@@ -59,7 +63,7 @@ export default function MesasPage() {
       try {
         setLoading(true)
         const data = await getAllMesas()
-        setMesas(data)
+        setMesas(data as Mesa[])
       } catch (error) {
         console.error("Error al cargar mesas:", error)
         toast({
@@ -79,7 +83,7 @@ export default function MesasPage() {
     const { name, value } = e.target
     setMesaActual({
       ...mesaActual,
-      [name]: name === "capacidad" ? Number.parseInt(value) : value,
+      [name]: Number.parseInt(value) || 0,  // Convert all inputs to numbers
     })
   }
 
@@ -96,7 +100,7 @@ export default function MesasPage() {
     try {
       setActionLoading(true)
       // Crear nueva mesa
-      const nuevaMesa = await createMesa(mesaActual)
+      const nuevaMesa = await createMesa(mesaActual) as Mesa
 
       // Actualizar estado local
       setMesas([...mesas, nuevaMesa])
@@ -195,8 +199,7 @@ export default function MesasPage() {
         <Button
           onClick={() => {
             setMesaActual({
-              id: 0,
-              numero: "",
+              numero: 0,
               capacidad: 4,
               estado: "Libre",
             })
@@ -219,7 +222,7 @@ export default function MesasPage() {
             <Card key={mesa.id} className="overflow-hidden">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle>Mesa #{mesa.numero}</CardTitle>
+                  <CardTitle>Mesa #{mesa.numero.toString()}</CardTitle>
                   <Badge className={coloresEstado[mesa.estado]}>{mesa.estado}</Badge>
                 </div>
                 <CardDescription>Capacidad: {mesa.capacidad} personas</CardDescription>

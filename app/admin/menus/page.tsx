@@ -19,10 +19,18 @@ import Image from "next/image"
 import { getMenusWithProductos, addProductoToMenu, removeProductoFromMenu } from "@/services/menus.service"
 import { getAllProductos } from "@/services/productos.service"
 
+interface Producto {
+  id: number
+  nombre: string
+  precio: number
+  imagen?: string
+  iva: number
+}
+
 export default function MenusPage() {
   const { toast } = useToast()
-  const [menus, setMenus] = useState({})
-  const [productosDisponibles, setProductosDisponibles] = useState([])
+  const [menus, setMenus] = useState<Record<string, number[]>>({})
+  const [productosDisponibles, setProductosDisponibles] = useState<Producto[]>([])
   const [loading, setLoading] = useState(true)
   const [diaSeleccionado, setDiaSeleccionado] = useState("lunes")
   const [productoSeleccionado, setProductoSeleccionado] = useState("")
@@ -109,7 +117,7 @@ export default function MenusPage() {
       console.error("Error al agregar producto al menú:", error)
       toast({
         title: "Error",
-        description: error.message || "No se pudo agregar el producto al menú",
+        description: (error instanceof Error ? error.message : "No se pudo agregar el producto al menú"),
         variant: "destructive",
       })
     } finally {
@@ -117,7 +125,12 @@ export default function MenusPage() {
     }
   }
 
-  const handleEliminarProducto = async (dia, idProducto) => {
+  interface HandleEliminarProductoParams {
+    dia: string
+    idProducto: number
+  }
+
+  const handleEliminarProducto = async ({ dia, idProducto }: HandleEliminarProductoParams): Promise<void> => {
     try {
       setActionLoading(true)
       // Eliminar producto del menú
@@ -145,7 +158,7 @@ export default function MenusPage() {
     }
   }
 
-  const getProductoPorId = (id) => {
+  const getProductoPorId = (id: number): Producto | undefined => {
     return productosDisponibles.find((producto) => producto.id === id)
   }
 
@@ -205,14 +218,14 @@ export default function MenusPage() {
                             <div className="flex-1 space-y-1">
                               <h4 className="font-semibold">{producto.nombre}</h4>
                               <p className="text-sm text-muted-foreground">
-                                ${Number.parseFloat(producto.precio).toLocaleString()} + IVA ({producto.iva}%)
+                                ${Number.parseFloat(producto.precio.toString()).toLocaleString()} + IVA ({producto.iva}%)
                               </p>
                             </div>
                             <Button
                               variant="ghost"
                               size="icon"
                               className="absolute right-2 top-2"
-                              onClick={() => handleEliminarProducto(dia.valor, producto.id)}
+                              onClick={() => handleEliminarProducto({ dia: dia.valor, idProducto: producto.id })}
                               disabled={actionLoading}
                             >
                               <XIcon className="h-4 w-4" />
@@ -258,7 +271,7 @@ export default function MenusPage() {
               <SelectContent>
                 {productosNoEnMenu.map((producto) => (
                   <SelectItem key={producto.id} value={producto.id.toString()}>
-                    {producto.nombre} - ${Number.parseFloat(producto.precio).toLocaleString()}
+                    {producto.nombre} - ${Number.parseFloat(producto.precio.toString()).toLocaleString()}
                   </SelectItem>
                 ))}
               </SelectContent>

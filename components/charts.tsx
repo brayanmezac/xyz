@@ -11,13 +11,30 @@ import {
   Title,
   Tooltip,
   Legend,
+  ChartOptions,
+  ChartData,
+  TooltipItem,
 } from "chart.js"
 
 // Registrar los componentes de Chart.js
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend)
 
-export function BarChart({ data, horizontal = false }) {
-  const options = {
+interface ChartDataItem {
+  name: string;
+  total: number;
+}
+
+interface BarChartProps {
+  data: ChartDataItem[];
+  horizontal?: boolean;
+}
+
+interface LineChartProps {
+  data: ChartDataItem[];
+}
+
+export function BarChart({ data, horizontal = false }: BarChartProps) {
+  const options: ChartOptions<'bar'> = {
     responsive: true,
     plugins: {
       legend: {
@@ -25,19 +42,20 @@ export function BarChart({ data, horizontal = false }) {
       },
       tooltip: {
         callbacks: {
-          label: (context) => {
-            let label = context.dataset.label || ""
+          label: function(tooltipItem: TooltipItem<'bar'>) {
+            let label = tooltipItem.dataset.label || '';
             if (label) {
-              label += ": "
+              label += ': ';
             }
-            if (context.parsed.y !== null) {
+            const value = horizontal ? tooltipItem.parsed.x : tooltipItem.parsed.y;
+            if (value !== null) {
               label += new Intl.NumberFormat("es-CO", {
                 style: "currency",
                 currency: "COP",
                 minimumFractionDigits: 0,
-              }).format(horizontal ? context.parsed.x : context.parsed.y)
+              }).format(value);
             }
-            return label
+            return label;
           },
         },
       },
@@ -51,14 +69,14 @@ export function BarChart({ data, horizontal = false }) {
               style: "currency",
               currency: "COP",
               minimumFractionDigits: 0,
-            }).format(value),
+            }).format(Number(value)),
         },
       },
     },
     indexAxis: horizontal ? "y" : "x",
-  }
+  };
 
-  const chartData = {
+  const chartData: ChartData<'bar'> = {
     labels: data.map((item) => item.name),
     datasets: [
       {
@@ -73,8 +91,8 @@ export function BarChart({ data, horizontal = false }) {
   return <Bar options={options} data={chartData} />
 }
 
-export function LineChart({ data }) {
-  const options = {
+export function LineChart({ data }: LineChartProps) {
+  const options: ChartOptions<'line'> = {
     responsive: true,
     plugins: {
       legend: {
@@ -82,19 +100,19 @@ export function LineChart({ data }) {
       },
       tooltip: {
         callbacks: {
-          label: (context) => {
-            let label = context.dataset.label || ""
+          label: function(tooltipItem: TooltipItem<'line'>) {
+            let label = tooltipItem.dataset.label || '';
             if (label) {
-              label += ": "
+              label += ': ';
             }
-            if (context.parsed.y !== null) {
+            if (tooltipItem.parsed.y !== null) {
               label += new Intl.NumberFormat("es-CO", {
                 style: "currency",
                 currency: "COP",
                 minimumFractionDigits: 0,
-              }).format(context.parsed.y)
+              }).format(tooltipItem.parsed.y);
             }
-            return label
+            return label;
           },
         },
       },
@@ -108,13 +126,13 @@ export function LineChart({ data }) {
               style: "currency",
               currency: "COP",
               minimumFractionDigits: 0,
-            }).format(value),
+            }).format(Number(value)),
         },
       },
     },
-  }
+  };
 
-  const chartData = {
+  const chartData: ChartData<'line'> = {
     labels: data.map((item) => item.name),
     datasets: [
       {
